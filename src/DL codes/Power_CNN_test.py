@@ -29,17 +29,13 @@ Dropout, Dense, InputLayer, Flatten, MaxPool1D, Activation, GlobalAveragePooling
 ## Just open the zip file and grab the file 'household_power_consumption.txt' put it in the directory
 ## that you would like to run the code.
 
-model_path = '../../Trained models/Power consumption dataset/Power_regression_CNN.h5'
+model_path = '../../Trained models/Power_regression_CNN.h5'
 
 df = pd.read_csv('../../Dataset/household_power_consumption.txt', sep=';',
                  parse_dates={'dt' : ['Date', 'Time']}, infer_datetime_format=True,
                  low_memory=False, na_values=['nan','?'], index_col='dt')
 
-# # load 
-# Xtest1 = pd.read_csv('../../Output/Power_GRU_BIM_attack.csv', sep=',', header=None)
-
 ## finding all columns that have nan:
-
 droping_list_all=[]
 for j in range(0,7):
     if not df.iloc[:, j].notnull().all():
@@ -115,16 +111,6 @@ test = values[n_train_time:, :]
 train_X, train_y = train[:, :-1], train[:, -1]
 test_X, test_y = test[:, :-1], test[:, -1]
 
-#df = pd.DataFrame(test_X)
-
-
-## save to xlsx file
-
-#filepath1 = '../../Output/Power_train_dataset.csv'
-
-
-#df.to_csv(filepath1, index=False)
-# test_X=Xtest1.to_numpy()
 
 # reshape input to be 3D [samples, timesteps, features]
 train_X = train_X.reshape((train_X.shape[0], 1, train_X.shape[1]))
@@ -193,7 +179,7 @@ def compute_gradient(model_fn, loss_fn, x, y, targeted):
 def fgsm(X, Y, model,epsilon,targeted= False):
     ten_X = tf.convert_to_tensor(X)
     grad = compute_gradient(model,rmse,ten_X,Y,targeted)
-    dir=np.sign(grad)
+    dir = np.sign(grad)
     return X + epsilon * dir, Y
 
 
