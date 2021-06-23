@@ -1,6 +1,8 @@
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, GRU, Conv1D, Dense, Flatten, InputLayer, Activation, Dropout
 
+from utils import rmse
+
 # train_X.shape  ['-',1,7]
 
 def setup_cnn_model(train_X,kernel_size):
@@ -29,22 +31,23 @@ def setup_cnn_model(train_X,kernel_size):
     cnn.add(Dense(50, activation='relu'))
     cnn.add(Dense(units=1))
     cnn.add(Activation("relu"))
+	
     return cnn
 
 
-def setup_gru_model(train_X):
+def setup_gru_model(train_X,units):
 	model = Sequential()
 	model.add(GRU(
 			input_shape=(train_X.shape[1], train_X.shape[2]),
-			units=100,
+			units=units,
 			return_sequences=True))
 	model.add(Dropout(0.2))
 	model.add(GRU(
-			units=100,
+			units=units,
 			return_sequences=True))
 	model.add(Dropout(0.2))
 	model.add(GRU(
-			units=100,
+			units=units,
 			return_sequences=False))
 	model.add(Dropout(0.2))
 	model.add(Dense(units=1))
@@ -52,19 +55,19 @@ def setup_gru_model(train_X):
 	return model
 
 
-def setup_lstm_model(train_X):
+def setup_lstm_model(train_X,units):
 	model = Sequential()
 	model.add(LSTM(
 			input_shape=(train_X.shape[1], train_X.shape[2]),
-			units=100,
+			units=units,
 			return_sequences=True))
 	model.add(Dropout(0.2))
 	model.add(LSTM(
-			units=100,
+			units=units,
 			return_sequences=True))
 	model.add(Dropout(0.2))
 	model.add(LSTM(
-			units=100,
+			units=units,
 			return_sequences=False))
 	model.add(Dropout(0.2))
 	model.add(Dense(units=1))

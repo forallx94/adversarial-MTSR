@@ -8,7 +8,11 @@ import tensorflow.keras.backend as K
 def rmse(y_true, y_pred):
     return K.sqrt(K.mean(K.square(y_pred - y_true), axis=-1))
 
-def power_data(df):
+def power_data():
+    df = pd.read_csv('../Dataset/household_power_consumption.txt', sep=';',
+                 parse_dates={'dt' : ['Date', 'Time']}, infer_datetime_format=True,
+                 low_memory=False, na_values=['nan','?'], index_col='dt')
+
     ## finding all columns that have nan:
     droping_list_all=[]
     for j in range(0,7):
@@ -86,6 +90,57 @@ def power_data(df):
 
     return train_X, train_y, test_X, test_y , scaler
 
+
+def window_slide(input_data, window_size):
+    X = []
+    y = []
+    for i in range(len(input_data) - window_size - 1):
+        t = []
+        for j in range(0, window_size):
+            t.append(input_data[[(i + j)], :])
+        X.append(t)
+        y.append(input_data[i + window_size, 1])
+    return np.array(X), np.array(y)
+
+
+def google_data():
+    # import data
+    stock_train = pd.read_csv("../Dataset/Google dataset/Google_train.csv",dtype={'Close': 'float64', 'Volume': 'int64','Open': 'float64','High': 'float64', 'Low': 'float64'})
+    stock_test = pd.read_csv("../Dataset/Google dataset/Google_train.csv",dtype={'Close': 'float64', 'Volume': 'int64','Open': 'float64','High': 'float64', 'Low': 'float64'})
+
+    stock_train.columns = ['date', 'close/last', 'volume', 'open', 'high', 'low']
+    stock_test.columns = ['date', 'close/last', 'volume', 'open', 'high', 'low']
+
+    #create a new column "average" 
+    stock_train['average'] = (stock_train['high'] + stock_train['low'])/2
+    stock_test['average'] = (stock_test['high'] + stock_test['low'])/2
+
+    #pick the input features (average and volume)
+    train_feature = stock_train.iloc[:,[2,6]].values
+    train_data = train_feature
+
+    test_feature= stock_test.iloc[:,[2,6]].values
+    test_data = test_feature
+
+    #data normalization
+    sc= MinMaxScaler(feature_range=(0,1))
+    train_data[:,0:2] = sc.fit_transform(train_feature[:,:])
+
+    cs= MinMaxScaler(feature_range=(0,1))
+    test_data[:,0:2] = cs.fit_transform(test_feature[:,:])
+
+    scaler = [sc, cs]
+
+    # data preparation
+    lookback = 60
+
+    train_X, train_y = window_slide(train_data, lookback)
+    test_X, test_y = window_slide(test_data, lookback)
+
+    train_X = train_X.reshape(train_X.shape[0], lookback, 2)
+    test_X = test_X.reshape(test_X.shape[0],lookback, 2)
+
+    return train_X, train_y, test_X, test_y , scaler
 
 def compute_gradient(model_fn, loss_fn, x, y, targeted):
     """

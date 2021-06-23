@@ -19,13 +19,9 @@ from tensorflow.keras.layers import LSTM, Dense, InputLayer, Activation, Dropout
 model_path = '../../Output/Power_regression_LSTM.h5'
 
 
-df = pd.read_csv('../../Dataset/household_power_consumption.txt', sep=';',
-                 parse_dates={'dt' : ['Date', 'Time']}, infer_datetime_format=True,
-                 low_memory=False, na_values=['nan','?'], index_col='dt')
+train_X, train_y, test_X, test_y , scaler = power_data()
 
-train_X, train_y, test_X, test_y , scaler = power_data(df)
-
-model = setup_lstm_model(train_X)
+model = setup_lstm_model(train_X,100)
 # fit network
 history = model.fit(train_X, train_y,  epochs=200, batch_size=14, validation_data=(test_X, test_y), verbose=2)
 

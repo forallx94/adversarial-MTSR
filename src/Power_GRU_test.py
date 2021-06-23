@@ -20,13 +20,7 @@ from tensorflow.keras.models import load_model
 
 model_path = '../Trained models/Power_regression_GRU.h5'
 
-
-df = pd.read_csv('../Dataset/household_power_consumption.txt', sep=';',
-                 parse_dates={'dt' : ['Date', 'Time']}, infer_datetime_format=True,
-                 low_memory=False, na_values=['nan','?'], index_col='dt')
-
-
-train_X, train_y, test_X, test_y , scaler = power_data(df)
+train_X, train_y, test_X, test_y , scaler = power_data()
 
 # if best iteration's model was saved then load and use it
 if os.path.isfile(model_path):

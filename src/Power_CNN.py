@@ -1,5 +1,4 @@
 import numpy as np # linear algebra
-from scipy.stats import randint
 import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv), data manipulation as in SQL
 import matplotlib.pyplot as plt # this is used for the plot the graph
 import seaborn as sns # used for plot interactive graph.
@@ -21,11 +20,7 @@ from tensorflow.keras.layers import Conv1D, Dense, InputLayer, Flatten, Activati
 model_path = '../Trained models/Power_regression_CNN.h5'
 
 
-df = pd.read_csv('../Dataset/household_power_consumption.txt', sep=';',
-                 parse_dates={'dt' : ['Date', 'Time']}, infer_datetime_format=True,
-                 low_memory=False, na_values=['nan','?'], index_col='dt')
-
-train_X, train_y, test_X, test_y , scaler = power_data(df)
+train_X, train_y, test_X, test_y , scaler = power_data()
 
 cnn = setup_cnn_model(train_X,1)
 cnn.compile(optimizer='adam', loss='mean_squared_error',metrics=[rmse])

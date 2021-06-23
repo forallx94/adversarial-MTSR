@@ -22,11 +22,7 @@ from tensorflow.keras.layers import Conv1D, Dense, InputLayer, Flatten, Activati
 
 model_path = '../Trained models/Power_regression_CNN.h5'
 
-df = pd.read_csv('../Dataset/household_power_consumption.txt', sep=';',
-                 parse_dates={'dt' : ['Date', 'Time']}, infer_datetime_format=True,
-                 low_memory=False, na_values=['nan','?'], index_col='dt')
-
-train_X, train_y, test_X, test_y , scaler = power_data(df)
+train_X, train_y, test_X, test_y , scaler = power_data()
 
 
 if os.path.isfile(model_path):
