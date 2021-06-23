@@ -14,25 +14,24 @@ from sklearn.feature_selection import SelectFromModel
 from sklearn import metrics # for the check the error and accuracy of the model
 from sklearn.metrics import mean_squared_error,r2_score
 
-import keras.backend as K
+import tensorflow.keras.backend as K
 
 ## for Deep-learing:
-import keras
-from keras.models import Sequential
-from keras.utils import to_categorical
-from keras.optimizers import SGD
-from keras.callbacks import EarlyStopping
-from keras.utils import np_utils
+import tensorflow.keras as keras
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.optimizers import SGD
+from tensorflow.keras.callbacks import EarlyStopping
 import itertools
 
-from keras.layers import Conv1D, BatchNormalization,\
+from tensorflow.keras.layers import Conv1D, BatchNormalization,\
 Dropout, Dense, InputLayer, Flatten, MaxPool1D, Activation, GlobalAveragePooling1D
 
 ## Data can be downloaded from: http://archive.ics.uci.edu/ml/machine-learning-databases/00235/
 ## Just open the zip file and grab the file 'household_power_consumption.txt' put it in the directory
 ## that you would like to run the code.
 
-model_path = '../../Output/Power_regression_CNN.h5'
+
+model_path = '../../Output/Power_regression_CNN_2.h5'
 
 
 df = pd.read_csv('../../Dataset/household_power_consumption.txt', sep=';',
@@ -46,15 +45,12 @@ for j in range(0,7):
     if not df.iloc[:, j].notnull().all():
         droping_list_all.append(j)
         #print(df.iloc[:,j].unique())
-droping_list_all
 
 # filling nan with mean in any columns
 
 for j in range(0,7):
         df.iloc[:,j]=df.iloc[:,j].fillna(df.iloc[:,j].mean())
 
-# another sanity check to make sure that there are not more any nan
-df.isnull().sum()
 
 def series_to_supervised(data, n_in=1, n_out=1, dropnan=True):
 	n_vars = 1 if type(data) is list else data.shape[1]
@@ -96,6 +92,7 @@ values = df_resample.values
 # ensure all data is float
 #values = values.astype('float32')
 # normalize features
+# minmax 를 그냥 사용하여 모든 columns 에 대하여 minmax 진행
 scaler = MinMaxScaler(feature_range=(0, 1))
 scaled = scaler.fit_transform(values)
 # frame as supervised learning

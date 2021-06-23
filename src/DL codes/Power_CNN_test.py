@@ -1,6 +1,5 @@
 import sys
 import numpy as np # linear algebra
-from scipy.stats import randint
 import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv), data manipulation as in SQL
 import matplotlib.pyplot as plt # this is used for the plot the graph
 import seaborn as sns # used for plot interactive graph.
@@ -9,38 +8,35 @@ from sklearn.model_selection import KFold # use for cross validation
 from sklearn.preprocessing import StandardScaler # for normalization
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.pipeline import Pipeline # pipeline making
-from sklearn.model_selection import cross_val_score
 from sklearn.feature_selection import SelectFromModel
 from sklearn import metrics # for the check the error and accuracy of the model
 from sklearn.metrics import mean_squared_error,r2_score
 
-import keras.backend as K
+import tensorflow.keras.backend as K
 import os
 
 ## for Deep-learing:
-import keras
-from keras.models import Sequential,load_model
-from keras.utils import to_categorical
-from keras.optimizers import SGD
-from keras.callbacks import EarlyStopping
-from keras.utils import np_utils
+import tensorflow as tf
+import tensorflow.keras as keras
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.callbacks import EarlyStopping
 import itertools
 
-from keras.layers import Conv1D, BatchNormalization,\
+from tensorflow.keras.layers import Conv1D, BatchNormalization,\
 Dropout, Dense, InputLayer, Flatten, MaxPool1D, Activation, GlobalAveragePooling1D
 
 ## Data can be downloaded from: http://archive.ics.uci.edu/ml/machine-learning-databases/00235/
 ## Just open the zip file and grab the file 'household_power_consumption.txt' put it in the directory
 ## that you would like to run the code.
 
-model_path = '../../Output/Power_regression_CNN.h5'
-
+model_path = '../../Trained models/Power consumption dataset/Power_regression_CNN.h5'
 
 df = pd.read_csv('../../Dataset/household_power_consumption.txt', sep=';',
                  parse_dates={'dt' : ['Date', 'Time']}, infer_datetime_format=True,
                  low_memory=False, na_values=['nan','?'], index_col='dt')
 
-Xtest1 = pd.read_csv('../../Output/Power_GRU_BIM_attack.csv', sep=',', header=None)
+# # load 
+# Xtest1 = pd.read_csv('../../Output/Power_GRU_BIM_attack.csv', sep=',', header=None)
 
 ## finding all columns that have nan:
 
@@ -128,7 +124,7 @@ test_X, test_y = test[:, :-1], test[:, -1]
 
 
 #df.to_csv(filepath1, index=False)
-test_X=Xtest1.to_numpy()
+# test_X=Xtest1.to_numpy()
 
 # reshape input to be 3D [samples, timesteps, features]
 train_X = train_X.reshape((train_X.shape[0], 1, train_X.shape[1]))
@@ -166,34 +162,78 @@ cnn.add(Dense(50, activation='relu'))
 cnn.add(Dense(units=1))
 cnn.add(Activation("relu"))
 
+
+def compute_gradient(model_fn, loss_fn, x, y, targeted):
+    """
+    Computes the gradient of the loss with respect to the input tensor.
+    :param model_fn: a callable that takes an input tensor and returns the model logits.
+    :param loss_fn: loss function that takes (labels, logits) as arguments and returns loss.
+    :param x: input tensor
+    :param y: Tensor with true labels. If targeted is true, then provide the target label.
+    :param targeted:  bool. Is the attack targeted or untargeted? Untargeted, the default, will
+                      try to make the label incorrect. Targeted will instead try to move in the
+                      direction of being more like y.
+    :return: A tensor containing the gradient of the loss with respect to the input tensor.
+    """
+
+    with tf.GradientTape() as g:
+        g.watch(x)
+        # Compute loss
+        loss = loss_fn(y, model_fn(x))
+        if (
+            targeted
+        ):  # attack is targeted, minimize loss of target label rather than maximize loss of correct label
+            loss = -loss
+
+    # Define gradient of loss wrt input
+    grad = g.gradient(loss, x)
+    return grad
+
+
+def fgsm(X, Y, model,epsilon,targeted= False):
+    ten_X = tf.convert_to_tensor(X)
+    grad = compute_gradient(model,rmse,ten_X,Y,targeted)
+    dir=np.sign(grad)
+    return X + epsilon * dir, Y
+
+
 if os.path.isfile(model_path):
     cnn.load_weights(model_path)
+
+    # make adversarial example
+    adv_X, _ = fgsm(X =test_X, Y=test_y, model=cnn , epsilon=0.2)
+
+    # make a prediction
+    adv_yhat = cnn.predict(adv_X,verbose=1, batch_size=200)
+    adv_X = adv_X.reshape((adv_X.shape[0], 7))
+
     # make a prediction
     yhat = cnn.predict(test_X,verbose=1, batch_size=200)
     test_X = test_X.reshape((test_X.shape[0], 7))
+
+    # invert scaling for adv forecast
+    inv_adv_yhat = np.concatenate((adv_yhat, test_X[:, -6:]), axis=1)
+    inv_adv_yhat = scaler.inverse_transform(inv_adv_yhat)
+    inv_adv_yhat = inv_adv_yhat[:,0]
+
     # invert scaling for forecast
     inv_yhat = np.concatenate((yhat, test_X[:, -6:]), axis=1)
     inv_yhat = scaler.inverse_transform(inv_yhat)
     inv_yhat = inv_yhat[:,0]
+
     # invert scaling for actual
     test_y = test_y.reshape((len(test_y), 1))
     inv_y = np.concatenate((test_y, test_X[:, -6:]), axis=1)
     inv_y = scaler.inverse_transform(inv_y)
     inv_y = inv_y[:,0]
+
     # calculate RMSE
     rmse = np.sqrt(mean_squared_error(inv_y, inv_yhat))
     print('Test RMSE: %.3f' % rmse)
 
-    df = pd.DataFrame(inv_yhat)
-    df1 = pd.DataFrame(inv_y)
-
-    ## save to xlsx file
-
-    filepath1 = '../../Output/Power_LSTM_FGSM_attack_file.csv'
-    filepath2 = '../../Output/Power_CNN_true_file.csv'
-
-    df.to_csv(filepath1, index=False)
-    df1.to_csv(filepath2, index=False)
+    # calculate adv RMSE
+    rmse = np.sqrt(mean_squared_error(inv_y, inv_adv_yhat))
+    print('Test adv RMSE: %.3f' % rmse)
 
     ## time steps, every step is one hour (you can easily convert the time step to the actual time index)
     ## for a demonstration purpose, I only compare the predictions in 200 hours.
@@ -202,6 +242,7 @@ if os.path.isfile(model_path):
     aa=[x for x in range(200)]
     plt.plot(aa, inv_y[:200], marker='.', label="actual")
     plt.plot(aa, inv_yhat[:200], 'r', label="prediction")
+    plt.plot(aa, inv_adv_yhat[:200], 'g', label="adv prediction")
     plt.ylabel('Global_active_power', size=15)
     plt.xlabel('Time step', size=15)
     plt.legend(fontsize=15)
