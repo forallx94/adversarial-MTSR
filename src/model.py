@@ -3,24 +3,24 @@ from tensorflow.keras.layers import LSTM, GRU, Conv1D, Dense, Flatten, InputLaye
 
 # train_X.shape  ['-',1,7]
 
-def setup_cnn_model(train_X):
+def setup_cnn_model(train_X,kernel_size):
     cnn = Sequential()
     cnn.add(InputLayer(input_shape=(train_X.shape[1], train_X.shape[2])))
 
     cnn.add(Conv1D(filters=60,
-                kernel_size=1,
+                kernel_size=kernel_size,
                 padding="valid",
                 activation="relu")
         )
 
     cnn.add(Conv1D(filters=60,
-                kernel_size=1,
+                kernel_size=kernel_size,
                 padding="valid",
                 activation="relu")
         )
 
     cnn.add(Conv1D(filters=60,
-                kernel_size=1,
+                kernel_size=kernel_size,
                 padding="valid",
                 activation="relu")
         )

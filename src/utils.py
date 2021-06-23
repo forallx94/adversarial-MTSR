@@ -116,20 +116,20 @@ def compute_gradient(model_fn, loss_fn, x, y, targeted):
     return grad
 
 
-def fgsm(X, Y, model, loss_fn , epsilon,targeted= False):
+def fgsm(X, Y, model, loss_fn , epsilon, targeted= False):
     ten_X = tf.convert_to_tensor(X)
     grad = compute_gradient(model,loss_fn,ten_X,Y,targeted)
     dir = np.sign(grad)
     return X + epsilon * dir, Y
 
 
-def bim(X, Y, model, loss_fn, epsilon, alpha, I):
+def bim(X, Y, model, loss_fn, epsilon, alpha, I, targeted= False):
     Xp= np.zeros_like(X)
     for t in range(I):
         ten_X = tf.convert_to_tensor(X)
         grad = compute_gradient(model,loss_fn,ten_X,Y,targeted)
         dir = np.sign(grad)
-        Xp = Xp + epsilon * dir
+        Xp = Xp + alpha * dir
         Xp = np.where(Xp > X+epsilon, X+epsilon, Xp)
         Xp = np.where(Xp < X-epsilon, X-epsilon, Xp)
     return Xp, Y

@@ -30,7 +30,7 @@ train_X, train_y, test_X, test_y , scaler = power_data(df)
 
 
 if os.path.isfile(model_path):
-    cnn = setup_cnn_model(train_X)
+    cnn = setup_cnn_model(train_X,1)
     cnn.load_weights(model_path)
 
     # make adversarial example

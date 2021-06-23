@@ -27,7 +27,7 @@ df = pd.read_csv('../Dataset/household_power_consumption.txt', sep=';',
 
 train_X, train_y, test_X, test_y , scaler = power_data(df)
 
-cnn = setup_cnn_model(train_X)
+cnn = setup_cnn_model(train_X,1)
 cnn.compile(optimizer='adam', loss='mean_squared_error',metrics=[rmse])
 
 # fit network
